@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowpilot"
+version = "0.1.0"
+description = "Agentic AI assistant for real-time lane-change decisions on NVIDIA Jetson Orin Nano"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "opencv-python-headless>=4.9",
+    "langgraph>=0.1",
+    "langchain-core>=0.2",
+    "anthropic>=0.30",
+    "pydantic>=2.7",
+    "pyserial>=3.5",
+    "python-can>=4.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "pytest-benchmark>=4.0",
+    "ruff>=0.4",
+    "black>=24.4",
+    "mypy>=1.10",
+]
+# On Jetson: install torch from the NVIDIA index (see scripts/setup_jetson.sh).
+# On a desktop CUDA machine: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+cuda = [
+    "cupy-cuda12x>=13.0",
+]
+# Ouster LiDAR SDK — provides full calibration/metadata support.
+# The built-in OusterLidarAdapter uses a minimal parser without this;
+# install for production use: pip install ouster-sdk
+lidar = [
+    "ouster-sdk>=0.10",
+]
+# pcap replay support for offline development
+replay = [
+    "scapy>=2.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flowpilot*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v"
+markers = [
+    "cuda: requires a CUDA-capable GPU (deselect with -m 'not cuda')",
+    "jetson: requires Jetson-specific hardware or drivers",
+]

@@ -1,0 +1,52 @@
+# Planning and private docs — not for version control
+_planning/
+
+# Python
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# CUDA / compiled artifacts
+*.so
+*.dll
+*.cubin
+*.ptx
+*.fatbin
+
+# Model weights and large binary assets
+*.pt
+*.pth
+*.onnx
+*.trt
+*.engine
+
+# Data and logs
+*.log
+*.csv
+*.bag
+data/
+logs/
+runs/
+
+# Benchmark results (tracked separately, not in git)
+benchmarks/results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
