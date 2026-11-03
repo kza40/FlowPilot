@@ -2,7 +2,14 @@
 
 Agentic AI assistant for real-time lane-change decisions on NVIDIA Jetson Orin Nano.
 
-FlowPilot ingests multi-modal sensor data (camera, LiDAR, radar, IMU), runs a multi-step reasoning chain over the fused scene state, and emits structured lane-change decisions with confidence scores. Safety interlocks and a human-override controller sit outside the agent loop so they catch failures caused by the agent itself, not just environmental edge cases.
+FlowPilot is designed to ingest multi-modal sensor data (camera, LiDAR, radar, IMU), run a multi-step reasoning chain over the fused scene state, and emit structured lane-change decisions with confidence scores. Safety interlocks and a human-override controller sit outside the agent loop so they catch failures caused by the agent itself, not just environmental edge cases.
+
+## Status
+
+**Work in progress.** Phases 1-2 of 7 are done (see [Implementation Phases](#implementation-phases)).
+
+- **Built and tested:** sensor ingestion adapters for camera, LiDAR, radar and IMU, temporal synchronization into a single `SceneState`, hardware smoke tests, and a latency benchmarking harness with regression comparison. 36 unit tests run without a GPU (`pytest -m "not cuda"`).
+- **Designed, not yet implemented:** perception, the agent reasoning loop and the safety layer. The `perception/`, `agent/` and `safety/` packages are placeholders. The architecture, safety and latency sections below describe the target design.
 
 ---
 
@@ -30,7 +37,7 @@ Sensors (camera · LiDAR · radar · IMU)
   Actuation / Human Operator
 ```
 
-The agent loop uses deterministic Python tool calls as the primary decision path (gap analysis, TTC, intent prediction). A small quantized LLM running locally on the Jetson is reserved for generating human-readable rationale on override events — keeping the hot path well within the 80 ms per-cycle latency budget.
+The agent loop is designed to use deterministic Python tool calls as the primary decision path (gap analysis, TTC, intent prediction). A small quantized LLM running locally on the Jetson will be reserved for generating human-readable rationale on override events — keeping the hot path well within the 80 ms per-cycle latency budget.
 
 ---
 
@@ -44,7 +51,7 @@ The agent loop uses deterministic Python tool calls as the primary decision path
 | Memory | 8 GB LPDDR5 shared CPU/GPU |
 | CUDA | 12.x (via JetPack 6) |
 
-All models are compiled to TensorRT engines (int8 for detection backbone, fp16 for heads). The DLA handles conv-heavy backbone passes; the GPU handles detection heads and the EKF tracker.
+Planned deployment: models compiled to TensorRT engines (int8 for the detection backbone, fp16 for heads), with the DLA handling conv-heavy backbone passes and the GPU handling detection heads and the EKF tracker.
 
 ---
 
@@ -53,9 +60,9 @@ All models are compiled to TensorRT engines (int8 for detection backbone, fp16 f
 ```
 flowpilot/
   sensors/       Ingestion adapters (camera, LiDAR, radar, IMU) + synchronizer
-  perception/    Lane detection, object tracking, sensor fusion, SceneState
-  agent/         LangGraph state machine, reasoning tools, decision synthesis
-  safety/        Safety gates, confidence thresholds, override controller
+  perception/    (planned) Lane detection, object tracking, sensor fusion
+  agent/         (planned) LangGraph state machine, reasoning tools, decision synthesis
+  safety/        (planned) Safety gates, confidence thresholds, override controller
   benchmarks/    Latency and accuracy measurement harness
 tests/
   sensors/       Unit + integration tests for ingestion layer
@@ -70,7 +77,7 @@ scripts/
 ### On Jetson Orin Nano (target hardware)
 
 ```bash
-git clone <repo-url> && cd FlowPilot
+git clone https://github.com/kza40/FlowPilot.git && cd FlowPilot
 chmod +x scripts/setup_jetson.sh
 ./scripts/setup_jetson.sh
 ```
@@ -110,9 +117,9 @@ make bench-compare  # compare latest two benchmark runs, flag regressions
 
 ---
 
-## Safety Design
+## Safety Design (planned)
 
-Safety interlocks run as a separate async task — independent of the agent — so they catch agent bugs, not just environmental edge cases.
+Safety interlocks will run as a separate async task, independent of the agent, so they catch agent bugs and not just environmental edge cases.
 
 | Gate | Trigger | Action |
 |------|---------|--------|
@@ -122,11 +129,13 @@ Safety interlocks run as a separate async task — independent of the agent — 
 | Velocity envelope | Speed < 20 km/h or > 120 km/h | HOLD |
 | Human override | Operator signal (keyboard / CAN / REST) | Immediate HOLD + audit log |
 
-Every decision — including gate results, confidence scores, and agent rationale — is written to an append-only audit log.
+Every decision, including gate results, confidence scores and agent rationale, will be written to an append-only audit log.
 
 ---
 
 ## Latency Targets
+
+These are design targets; end-to-end latency will be measured once the perception and agent layers exist.
 
 | Stage | Target |
 |-------|--------|
